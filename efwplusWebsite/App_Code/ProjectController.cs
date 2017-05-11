@@ -89,9 +89,9 @@ namespace efwplusWebsite.App_Code
             }
             else
             {
-                strsql += @" WHERE isshow=1 and classid=" + classID+ " order by toplevel DESC, createdate desc";
+                strsql += @" WHERE isshow=1 and classid=" + classID + " order by toplevel DESC, createdate desc";
             }
-            DataTable dtPL= DbHelper.GetDataTable(strsql);
+            DataTable dtPL = DbHelper.GetDataTable(strsql);
             //获取总数量
             strsql = @"SELECT COUNT(*) FROM ews_ProjectList WHERE isshow=1";
             view.totalNum = Convert.ToInt32(DbHelper.GetDataResult(strsql));
@@ -113,13 +113,37 @@ namespace efwplusWebsite.App_Code
                 pm.Name = dtPL.Rows[i]["name"].ToString();
                 pm.Intro = dtPL.Rows[i]["intro"].ToString();
                 pm.linkurl = dtPL.Rows[i]["linkurl"].ToString();
-                pm.className= dtPL.Rows[i]["classname"].ToString();
+                pm.className = dtPL.Rows[i]["classname"].ToString();
                 pm.author = dtPL.Rows[i]["author"].ToString();
                 pm.createdate = dtPL.Rows[i]["createdate"].ToString();
                 view.ProjectList.Add(pm);
             }
 
             return view;
+        }
+
+        public object ShowHomeProject()
+        {
+            //获取项目列表
+            string strsql = @"SELECT top 4 a.*,b.NAME classname FROM ews_ProjectList a
+                    LEFT JOIN ews_class b ON a.classid=b.id AND b.TYPE=0";
+            strsql += @" WHERE isshow=1 order by toplevel DESC, createdate desc";
+            DataTable dtPL = DbHelper.GetDataTable(strsql);
+            List<ProjectModel> ProjectList = new List<ProjectModel>();
+            for (int i = 0; i < dtPL.Rows.Count; i++)
+            {
+                ProjectModel pm = new ProjectModel();
+                pm.ID = dtPL.Rows[i]["ID"].ToString();
+                pm.Name = dtPL.Rows[i]["name"].ToString();
+                pm.Intro = dtPL.Rows[i]["intro"].ToString();
+                pm.linkurl = dtPL.Rows[i]["linkurl"].ToString();
+                pm.className = dtPL.Rows[i]["classname"].ToString();
+                pm.author = dtPL.Rows[i]["author"].ToString();
+                pm.createdate = dtPL.Rows[i]["createdate"].ToString();
+                ProjectList.Add(pm);
+            }
+
+            return ProjectList;
         }
     }
 

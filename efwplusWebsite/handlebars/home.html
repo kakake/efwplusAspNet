@@ -30,5 +30,28 @@
                 </mark>
             </div>
         </div>
+
+        
     </div>
+    <div class="detail">
+        <div class="am-g am-container">
+            <div class="am-u-lg-12">
+                <h2 class="detail-h2">热门框架项目</h2>
+                <div class="am-g">
+                    {{#each data}}
+                    <div class="am-u-lg-3 am-u-md-6 am-u-sm-12 detail-mb">
+                        <h3 class="detail-h3">
+                            <i class="am-icon-product-hunt am-icon-sm"></i>
+                            <a href="{{linkurl}}" target="_blank">{{Name}}</a>
+                        </h3>
+                        <p class="detail-p">
+                            {{Intro}}
+                        </p>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+    </div>
+
 </script>
