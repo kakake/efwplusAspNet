@@ -68,30 +68,41 @@ namespace efwplusWebsite.App_Code
         public object ShowArticle()
         {
             string classID = Request.QueryString["classID"];
+            string searchKey = Request.QueryString["searchKey"];
 
             ArticleViewModel view = new ArticleViewModel();
 
-            string strsql = @"SELECT ID,name FROM ews_Class WHERE type=1 order by sort";
+            string strsql = @"SELECT ID,name
+                                ,(SELECT COUNT(*) FROM ews_ArticleList a WHERE a.classID=ews_Class.ID) num
+                                FROM ews_Class WHERE type=1 order by sort";
             DataTable dtAC = DbHelper.GetDataTable(strsql);
 
-            strsql = @"SELECT a.*,b.NAME classname FROM ews_ArticleList a
+            strsql = @"SELECT top 50 a.*,b.NAME classname FROM ews_ArticleList a
                         LEFT JOIN ews_class b ON a.classid=b.id AND b.TYPE=1";
-            if (string.IsNullOrEmpty(classID))
+            if (string.IsNullOrEmpty(classID) && string.IsNullOrEmpty(searchKey))
             {
                 strsql += @" WHERE isshow=1 order by toplevel DESC, createdate desc";
             }
-            else
+            else if (string.IsNullOrEmpty(classID) == false)
             {
-                strsql += @" WHERE isshow=1 and classid=" + classID+ " order by toplevel DESC, createdate desc";
+                strsql += @" WHERE isshow=1 and classid=" + classID + " order by toplevel DESC, createdate desc";
+            }
+            else if (string.IsNullOrEmpty(searchKey) == false)
+            {
+                strsql += @" WHERE isshow=1 and (title like '%" + searchKey + "%' or intro like '%" + searchKey + "%') order by toplevel DESC, createdate desc";
             }
             DataTable dtAL = DbHelper.GetDataTable(strsql);
+
+            //获取总数量
+            strsql = @"SELECT COUNT(*) FROM ews_ArticleList WHERE isshow=1";
+            view.totalNum = Convert.ToInt32(DbHelper.GetDataResult(strsql));
 
             view.ArticleClass = new List<ClassModel>();
             for (int i = 0; i < dtAC.Rows.Count; i++)
             {
                 ClassModel cm = new ClassModel();
                 cm.ID = Convert.ToInt32(dtAC.Rows[i]["ID"]);
-                cm.name = dtAC.Rows[i]["name"].ToString();
+                cm.name = dtAC.Rows[i]["name"].ToString() + "(" + dtAC.Rows[i]["num"].ToString() + ")";
                 view.ArticleClass.Add(cm);
             }
 
@@ -115,6 +126,7 @@ namespace efwplusWebsite.App_Code
 
     public class ArticleViewModel
     {
+        public int totalNum { get; set; }
         public List<ClassModel> ArticleClass { get; set; }
         public List<ArticleModel> ArticleList { get; set; }
     }

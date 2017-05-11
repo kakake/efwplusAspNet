@@ -25,9 +25,18 @@
     </div>
     <div class="am-u-md-3">
         <section class="am-panel am-panel-default">
+            <div class="am-panel-hd">文章检索</div>
+            <div class="am-panel-bd">
+                <div class="am-form-group">
+                    <input id="txtSearch" type="text" class="am-form-field am-input-sm" placeholder="搜索文章">
+                </div>
+                <button id="btn_search" type="button" class="am-btn am-btn-primary am-btn-sm">搜索</button>
+            </div>
+        </section>
+        <section class="am-panel am-panel-default">
             <div class="am-panel-hd">文章分类</div>
             <ul class="am-list blog-list">
-                <li><a href="#article">全部</a></li>
+                <li><a href="#article">全部({{data.totalNum}})</a></li>
                 {{#each data.ArticleClass}}
                 <li><a href="#article/{{ID}}" value="{{ID}}">{{name}}</a></li>
                 {{/each}}

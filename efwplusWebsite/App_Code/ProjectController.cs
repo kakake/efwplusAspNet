@@ -74,11 +74,13 @@ namespace efwplusWebsite.App_Code
             string classID = Request.QueryString["classID"];
 
             ProjectViewModel view = new ProjectViewModel();
-
-            string strsql = @"SELECT ID,name FROM ews_Class WHERE type=0 order by sort";
+            //获取分类
+            string strsql = @"SELECT ID,name
+                            ,(SELECT COUNT(*) FROM ews_ProjectList a WHERE a.classID=ews_Class.ID) num
+                            FROM ews_Class WHERE type=0 order by sort";
             DataTable dtPC = DbHelper.GetDataTable(strsql);
-
-            strsql = @"SELECT a.*,b.NAME classname FROM ews_ProjectList a
+            //获取项目列表
+            strsql = @"SELECT top 50 a.*,b.NAME classname FROM ews_ProjectList a
                     LEFT JOIN ews_class b ON a.classid=b.id AND b.TYPE=0";
 
             if (string.IsNullOrEmpty(classID))
@@ -90,13 +92,16 @@ namespace efwplusWebsite.App_Code
                 strsql += @" WHERE isshow=1 and classid=" + classID+ " order by toplevel DESC, createdate desc";
             }
             DataTable dtPL= DbHelper.GetDataTable(strsql);
+            //获取总数量
+            strsql = @"SELECT COUNT(*) FROM ews_ProjectList WHERE isshow=1";
+            view.totalNum = Convert.ToInt32(DbHelper.GetDataResult(strsql));
 
             view.projectClass = new List<ClassModel>();
             for (int i = 0; i < dtPC.Rows.Count; i++)
             {
                 ClassModel cm = new ClassModel();
                 cm.ID = Convert.ToInt32(dtPC.Rows[i]["ID"]);
-                cm.name = dtPC.Rows[i]["name"].ToString();
+                cm.name = dtPC.Rows[i]["name"].ToString() + "(" + dtPC.Rows[i]["num"].ToString() + ")";
                 view.projectClass.Add(cm);
             }
 
@@ -120,6 +125,7 @@ namespace efwplusWebsite.App_Code
 
     public class ProjectViewModel
     {
+        public int totalNum { get; set; }
         public List<ClassModel> projectClass { get; set; }
         public List<ProjectModel> ProjectList { get; set; }
     }

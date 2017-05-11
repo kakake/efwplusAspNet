@@ -27,7 +27,7 @@
         <section class="am-panel am-panel-default">
             <div class="am-panel-hd">项目分类</div>
             <ul class="am-list blog-list">
-                <li><a href="#project">全部</a></li>
+                <li><a href="#project">全部({{data.totalNum}})</a></li>
                 {{#each data.projectClass}}
                 <li><a href="#project/{{ID}}" value="{{ID}}">{{name}}</a></li>
                 {{/each}}
