@@ -65,6 +65,8 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="handlebars\about.html" />
+    <Content Include="handlebars\about.js" />
     <Content Include="handlebars\admin.html" />
     <Content Include="handlebars\admin.js" />
     <Content Include="handlebars\article.html" />
@@ -74,6 +76,8 @@
     <Content Include="handlebars\project.html" />
     <Content Include="handlebars\project.js" />
     <Content Include="image\landing.png" />
+    <Content Include="image\weixin.jpg" />
+    <Content Include="image\zhengshu.jpg" />
     <Content Include="index.html" />
     <Content Include="js\common.js" />
     <Content Include="js\index.js" />
