@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Web;
 
 namespace efwplusWebsite.App_Code
@@ -121,6 +122,30 @@ namespace efwplusWebsite.App_Code
             }
 
             return view;
+        }
+
+        public object GetWxText()
+        {
+            string wxarticleID = Request.QueryString["wxarticleID"];
+            string strsql = @"SELECT a.ID,a.title,a.linkurl FROM ews_ArticleList a
+                                WHERE isshow=1 AND ID in ({0}) order by createdate";
+            strsql = string.Format(strsql, wxarticleID);
+            DataTable dtAL = DbHelper.GetDataTable(strsql);
+
+            StringBuilder context = new StringBuilder();
+            context.Append("最新文章：");
+            context.Append(";");
+            for(int i=0;i<dtAL.Rows.Count;i++)
+            {
+                context.Append("• " + dtAL.Rows[i]["title"].ToString());
+                context.Append(";");
+                context.Append(dtAL.Rows[i]["linkurl"].ToString());
+                context.Append(";");
+            }
+            context.Append(";");
+            context.Append("efwplus官网:http://www.efwplus.cn/index.html");
+
+            return context.ToString();
         }
     }
 

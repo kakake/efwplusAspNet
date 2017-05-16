@@ -75,6 +75,20 @@
         });
     }
 
+    function wxhandle() {
+        $('#btn_wxsendall').click(function () {
+            var wxarticleID= $('#wxarticleID').val();
+            if(wxarticleID.length>0){
+                common.webapiGet('articleController', 'GetWxText', { wxarticleID: wxarticleID }, function (data) {
+                    data = data.replace(/"/g, '');
+                    var reg = new RegExp(";", "g"); //创建正则RegExp对象    
+                    var newstr = data.replace(reg, "\n");
+                    $('#wxText').val(newstr);
+                });
+            }
+        });
+    }
+
     function showpage(pageId, templates) {
 
         common.webapiGet('DictionaryController', 'ShowAdminData', {}, function (data) {
@@ -85,7 +99,8 @@
             articlehandle();
             //分类处理
             classhandle();
-            //标签处理
+            //微信群发
+            wxhandle();
         });
     }
 
