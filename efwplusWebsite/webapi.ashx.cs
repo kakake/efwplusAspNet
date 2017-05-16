@@ -4,23 +4,27 @@ using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
 using efwplusWebsite.App_Code;
 using miniCoreFrame.DbProvider;
 
 namespace efwplusWebsite
 {
-    public partial class WebApi : System.Web.UI.Page
+    /// <summary>
+    /// webapi 的摘要说明
+    /// </summary>
+    public class webapi : IHttpHandler
     {
         public static List<Type> ControllerTypes;
 
-        protected void Page_Load(object sender, EventArgs e)
+        public void ProcessRequest(HttpContext context)
         {
+            //context.Response.ContentType = "text/plain";
+            //context.Response.Write("Hello World");
+
             try
             {
-                string controller = Request.QueryString["controller"].ToString();
-                string method = Request.QueryString["method"].ToString();
+                string controller = context.Request.QueryString["controller"].ToString();
+                string method = context.Request.QueryString["method"].ToString();
 
                 //string args = String.Empty;
                 //if (Request.QueryString.AllKeys.Contains("args"))
@@ -37,21 +41,21 @@ namespace efwplusWebsite
                 if (minfo == null)
                     throw new Exception("请求方法名" + method + "不存在");
 
-                baseObj.Request = Request;
+                baseObj.Request = context.Request;
                 object data = minfo.Invoke(baseObj, null);
                 string Json = Newtonsoft.Json.JsonConvert.SerializeObject(data);//序列化为Json
-                Response.Write(Json);
+                context.Response.Write(Json);
             }
             catch (Exception err)
             {
-                Response.Write(err.Message);
+                context.Response.Write(err.Message);
             }
         }
 
         private AbstractDbHelper CreateDb()
         {
             ConnectionStringSettings aSett = System.Configuration.ConfigurationManager.ConnectionStrings["efwplusWebSite"];
-            AbstractDbHelper  DbHelper = miniCoreFrame.DbProvider.CreateDatabase.GetDatabase("SqlServer", aSett.ConnectionString);
+            AbstractDbHelper DbHelper = miniCoreFrame.DbProvider.CreateDatabase.GetDatabase("SqlServer", aSett.ConnectionString);
             miniCoreFrame.Common.Log.Info("连接数据库成功！");
             //miniCoreFrame.Common.Log.Info(GlobalAPP.RunState); 
             return DbHelper;
@@ -76,6 +80,14 @@ namespace efwplusWebsite
             }
 
             return ControllerTypes;
+        }
+
+        public bool IsReusable
+        {
+            get
+            {
+                return false;
+            }
         }
     }
 }

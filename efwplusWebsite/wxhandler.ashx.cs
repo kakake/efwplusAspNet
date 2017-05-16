@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml;
+using efwplusWebsite.App_Code;
 using miniCoreFrame.DbProvider;
 using Tencent;
 
@@ -17,10 +18,10 @@ namespace efwplusWebsite
     /// </summary>
     public class wxhandler : IHttpHandler
     {
-        string token = "kakake";//从配置文件获取Token
-        string appId = "wx95ff01dd30aac611";//从配置文件获取appId
-        string appSecret = "f6e05ef0b365d8db7c889d345c7aee34";//
-        string encodingAESKey = "Pl3eZn0SYdQXbFoRSXbQd48tMzac2MzR1DSmzXW85lm";//从配置文件获取EncodingAESKey
+        static string token = "kakake";//从配置文件获取Token
+        static string appId = "wx95ff01dd30aac611";//从配置文件获取appId
+        static string appSecret = "f6e05ef0b365d8db7c889d345c7aee34";//
+        static string encodingAESKey = "Pl3eZn0SYdQXbFoRSXbQd48tMzac2MzR1DSmzXW85lm";//从配置文件获取EncodingAESKey
 
         public void ProcessRequest(HttpContext context)
         {
@@ -120,7 +121,7 @@ namespace efwplusWebsite
         {
             string searchKey = ParserPostXML(postString, "Content");
             AbstractDbHelper DbHelper = CreateDb();
-            string strsql = @"SELECT top 20 a.title,a.linkurl FROM ews_ArticleList a";
+            string strsql = @"SELECT top 10 a.title,a.linkurl FROM ews_ArticleList a";
             strsql += @" WHERE isshow=1 and (title like '%" + searchKey + "%' or intro like '%" + searchKey + "%') order by toplevel DESC, createdate desc";
             DataTable dtAL = DbHelper.GetDataTable(strsql);
             Dictionary<string, string> articleList = new Dictionary<string, string>();
@@ -136,15 +137,15 @@ namespace efwplusWebsite
         private void EventHandle(string postString)
         {
             string Event = ParserPostXML(postString, "Event");
-            if(Event== "subscribe")
+            if (Event == "subscribe")
             {
-                string tpl= ContextTemplate(contextType.关注, null);
-                string text= BuildOutText(postString, tpl);
+                string tpl = ContextTemplate(contextType.关注, null);
+                string text = BuildOutText(postString, tpl);
                 WriteContent(text);
             }
         }
 
-        private string ParserPostXML(string postString,string nodename)
+        private string ParserPostXML(string postString, string nodename)
         {
             XmlDocument doc = new XmlDocument();
             XmlNode root;
@@ -153,7 +154,7 @@ namespace efwplusWebsite
             return root[nodename].InnerText;
         }
 
-        private string BuildOutText(string postString,string context)
+        private string BuildOutText(string postString, string context)
         {
             string ToUserName = ParserPostXML(postString, "ToUserName");
             string FromUserName = ParserPostXML(postString, "FromUserName");
@@ -169,7 +170,7 @@ namespace efwplusWebsite
             return outText;
         }
 
-        private string ContextTemplate(contextType type,Dictionary<string,string> articleList)
+        private static string ContextTemplate(contextType type, Dictionary<string, string> articleList)
         {
             StringBuilder context = new StringBuilder();
             switch (type)
@@ -179,13 +180,13 @@ namespace efwplusWebsite
                     break;
                 case contextType.搜索:
                     context.AppendLine("文章搜索结果：");
-                    if (articleList==null || articleList.Count == 0)
+                    if (articleList == null || articleList.Count == 0)
                         context.AppendLine("没有搜索到相关文章！");
                     else
                     {
-                        foreach(var item in articleList)
+                        foreach (var item in articleList)
                         {
-                            context.AppendLine("• "+item.Key);
+                            context.AppendLine("• " + item.Key);
                             context.AppendLine(item.Value);
                         }
                     }
@@ -226,13 +227,13 @@ namespace efwplusWebsite
             return enText.ToString();
         }
 
-        private void WriteContent(string str)
+        private static void WriteContent(string str)
         {
             miniCoreFrame.Common.Log.Info(str);
             HttpContext.Current.Response.Output.Write(str);
         }
 
-        private AbstractDbHelper CreateDb()
+        private static AbstractDbHelper CreateDb()
         {
             ConnectionStringSettings aSett = System.Configuration.ConfigurationManager.ConnectionStrings["efwplusWebSite"];
             AbstractDbHelper DbHelper = miniCoreFrame.DbProvider.CreateDatabase.GetDatabase("SqlServer", aSett.ConnectionString);
@@ -250,7 +251,49 @@ namespace efwplusWebsite
 
         private enum contextType
         {
-            关注,搜索,群发,其他
+            关注, 搜索, 群发, 其他
         }
+
+        //微信群发
+        public static void SendAll()
+        {
+            //获取待群发的文章
+            AbstractDbHelper DbHelper = CreateDb();
+            string strsql = @"SELECT top 10 a.ID,a.title,a.linkurl FROM ews_ArticleList a
+                                WHERE isshow=1 AND wxflag=0 order by createdate";
+            DataTable dtAL = DbHelper.GetDataTable(strsql);
+            Dictionary<string, string> articleList = new Dictionary<string, string>();
+            for (int i = 0; i < dtAL.Rows.Count; i++)
+            {
+                articleList.Add(dtAL.Rows[i]["title"].ToString(), dtAL.Rows[i]["linkurl"].ToString());
+                strsql = @"UPDATE ews_ArticleList SET wxflag=1 WHERE ID=" + dtAL.Rows[i]["ID"].ToString();
+                DbHelper.DoCommand(strsql);
+            }
+            //微信获取access_token
+            string wxurl_getaccecsstoken = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" + appId + "&secret=" + appSecret;
+            string retJson = HttpHelper.GetResponseString(HttpHelper.CreateGetHttpResponse(wxurl_getaccecsstoken));
+            wx_accesstoken wx_at = Newtonsoft.Json.JsonConvert.DeserializeObject<wx_accesstoken>(retJson);
+            //微信群发(需要认证)
+            string wxurl_sendall = "https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=" + wx_at.access_token;
+            string tpl = ContextTemplate(contextType.群发, articleList);
+            string text = @"{
+                           \""filter\"":{
+                              \""is_to_all\"":false,
+                              \""tag_id\"":2
+                           },
+                           \""text\"":{
+                              \""content\"":\""" + tpl + @"\""
+                           },
+                            \""msgtype\"":\""text\""
+                        }";
+            retJson = HttpHelper.GetResponseString(HttpHelper.CreatePostHttpResponse(wxurl_sendall, text));
+            miniCoreFrame.Common.Log.Info(retJson);
+        }
+    }
+
+    public class wx_accesstoken
+    {
+        public string access_token { get; set; }
+        public int expires_in { get; set; }
     }
 }
